@@ -3,17 +3,24 @@ package com.opengateway.validator;
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.model.Request;
 import com.atlassian.oai.validator.report.ValidationReport;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.cloud.gateway.support.BodyInserterContext;
+import org.springframework.cloud.gateway.support.CachedBodyOutputMessage;
+import org.springframework.cloud.gateway.support.DefaultServerRequest;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
+import org.springframework.web.reactive.function.BodyInserter;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -24,12 +31,16 @@ import static java.util.Collections.EMPTY_LIST;
 public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApiValidatorFilter.OpenApiValidatorConfig> {
 
     private static final Logger log = LoggerFactory.getLogger(OpenApiValidatorFilter.class);
-
+//https://github.com/spring-cloud/spring-cloud-gateway/blob/master/spring-cloud-gateway-core/src/main/java/org/springframework/cloud/gateway/filter/factory/rewrite/ModifyRequestBodyGatewayFilterFactory.java
     @Override
     public GatewayFilter apply(OpenApiValidatorConfig config) {
         OpenApiInteractionValidator validator = config.getValidator();
 
+
         return (exchange, chain) -> {
+            ServerRequest serverRequest = new DefaultServerRequest(exchange);
+            //TODO: flux or mono
+
             ServerHttpRequest request = exchange.getRequest();
 
             String path = request.getPath().value();
@@ -37,14 +48,8 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
             Request.Method method = Request.Method.valueOf(request.getMethodValue());
             log.info("Method: {}", method);
 
-            request.getBody().flatMap( f -> {
-                StringWriter writer = new StringWriter();
-                try {
-                    IOUtils.copy(f.asInputStream(), writer, Charset.defaultCharset());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                String body = writer.toString();
+            Mono<String> modifiedBody = serverRequest.bodyToMono(String.class).flatMap(body -> {
+
 
                 log.info("Body: {}", body);
 
@@ -99,20 +104,45 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
                     System.out.println("ALL GOOD");
                 }
 
-                return null;
+                return Mono.just(body);
 
             });
 
+            BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, String.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.putAll(exchange.getRequest().getHeaders());
 
 
-            /*if (report == null || report.hasErrors()) {
+            // if the body is changing content types, set it here, to the bodyInserter will know about it
 
-                exchange.getResponse().setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
-                return exchange.getResponse().setComplete();
+            CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, headers);
+            return bodyInserter.insert(outputMessage,  new BodyInserterContext())
+                    // .log("modify_request", Level.INFO)
+                    .then(Mono.defer(() -> {
+                        ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(
+                                exchange.getRequest()) {
+                            @Override
+                            public HttpHeaders getHeaders() {
+                                long contentLength = headers.getContentLength();
+                                HttpHeaders httpHeaders = new HttpHeaders();
+                                httpHeaders.putAll(super.getHeaders());
+                                if (contentLength > 0) {
+                                    httpHeaders.setContentLength(contentLength);
+                                } else {
+                                    // TODO: this causes a 'HTTP/1.1 411 Length Required' on httpbin.org
+                                    httpHeaders.set(HttpHeaders.TRANSFER_ENCODING, "chunked");
+                                }
+                                return httpHeaders;
+                            }
 
-            }*/
+                            @Override
+                            public Flux<DataBuffer> getBody() {
+                                return outputMessage.getBody();
+                            }
+                        };
+                        return chain.filter(exchange.mutate().request(decorator).build());
+                    }));
 
-            return chain.filter(exchange);
         };
 
     }

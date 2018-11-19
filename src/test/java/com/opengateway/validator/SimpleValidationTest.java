@@ -10,16 +10,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import static com.opengateway.validator.TestUtils.check;
 import static java.lang.String.join;
-import static java.util.Collections.EMPTY_LIST;
 import static org.junit.Assert.assertFalse;
 
 
