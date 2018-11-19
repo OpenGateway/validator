@@ -3,7 +3,7 @@ info:
   title: No components
   version: 1.0.0
 servers:
-- url: /
+- url: http://petstore.swagger.io/api
 paths:
   /simpleRoute:
     post:
@@ -12,8 +12,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-              - $ref: '#/components/schemas/SimpleRequest'
+              $ref: '#/components/schemas/SimpleRequest'
         description: The request body
         required: true
       responses:

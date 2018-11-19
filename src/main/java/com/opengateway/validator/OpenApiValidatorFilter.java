@@ -3,6 +3,7 @@ package com.opengateway.validator;
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.model.Request;
 import com.atlassian.oai.validator.report.ValidationReport;
+import org.apache.commons.io.IOUtils;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
@@ -21,6 +22,9 @@ import org.springframework.web.reactive.function.BodyExtractors;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -39,16 +43,24 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
 
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
+
             String path = request.getPath().value();
             log.info("Path: {}", path);
             Request.Method method = Request.Method.valueOf(request.getMethodValue());
             log.info("Method: {}", method);
-            final String body;
-            ValidationReport report = null;
-            try {
-                body = new DefaultServerRequest(exchange).bodyToMono(String.class).toFuture().get();
 
-                report = validator.validateRequest(new Request() {
+            request.getBody().flatMap( f -> {
+                StringWriter writer = new StringWriter();
+                try {
+                    IOUtils.copy(f.asInputStream(), writer, Charset.defaultCharset());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                String body = writer.toString();
+
+                log.info("Body: {}", body);
+
+                final ValidationReport report = validator.validateRequest(new Request() {
 
                     @Override
                     public String getPath() {
@@ -88,42 +100,41 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
                         return getHeaders().getOrDefault(s, EMPTY_LIST);
                     }
                 });
+                if (report == null || report.hasErrors()) {
+                    System.out.println(report);
+                    exchange.getResponse().setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+                    System.out.println("UNPROCESSABLE ENTITY");
+                    //return exchange.getResponse().setComplete();
 
-            if (report == null || report.hasErrors()) {
+                } else {
+                    System.out.println("ALL GOOD");
+                }
+
+                return null;
+
+            });
+
+
+
+            /*if (report == null || report.hasErrors()) {
 
                 exchange.getResponse().setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
                 return exchange.getResponse().setComplete();
 
-            }
+            }*/
+
             return chain.filter(exchange);
         };
-        
+
     }
 
     public static class OpenApiValidatorConfig {
 
         final OpenApiInteractionValidator validator = OpenApiInteractionValidator
-                .createFor("/contract.yaml")
+                .createFor("/simple_route.yaml")
                 .build();
 
-
-
-        private Long maxSize = 5000000L;
-
-        public OpenApiValidatorConfig setMaxSize(Long maxSize) {
-            this.maxSize = maxSize;
-            return this;
-        }
-
-        public Long getMaxSize() {
-            return maxSize;
-        }
 
         public OpenApiInteractionValidator getValidator() {
             return validator;

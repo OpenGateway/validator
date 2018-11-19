@@ -82,5 +82,60 @@ public class SimpleValidationTest {
 
     }
 
+    @Test
+    public void simpleRouteValidation() {
+
+        final OpenApiInteractionValidator validator = OpenApiInteractionValidator
+                .createFor("/simple_route.yaml")
+                .build();
+
+        final ValidationReport report = validator.validateRequest(new Request() {
+
+            @Override
+            public String getPath() {
+                return "/simpleRoute";
+            }
+
+
+            @Override
+            public Method getMethod() {
+                return Method.POST;
+            }
+
+
+            @Override
+            public Optional<String> getBody() {
+                return Optional.of("{\"simpleString\": \"kdjsh\", \"simpleInt\": 123}");
+            }
+
+
+            @Override
+            public Collection<String> getQueryParameters() {
+                return EMPTY_LIST;
+            }
+
+
+            @Override
+            public Collection<String> getQueryParameterValues(String s) {
+                return EMPTY_LIST;
+            }
+
+
+            @Override
+            public Map<String, Collection<String>> getHeaders() {
+                return Collections.singletonMap("Content-Type", Collections.singleton("application/json"));
+            }
+
+
+            @Override
+            public Collection<String> getHeaderValues(String s) {
+                return getHeaders().getOrDefault(s, EMPTY_LIST);
+            }
+        });
+
+        assertTrue("Found Unexpected errors", !report.hasErrors());
+
+    }
+
 }
 
