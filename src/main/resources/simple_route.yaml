@@ -5,7 +5,7 @@ info:
 servers:
 - url: http://petstore.swagger.io/api
 paths:
-  /simpleRoute:
+  /post:
     post:
       summary: Exercise oneOf composition
       requestBody:
