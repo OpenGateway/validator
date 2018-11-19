@@ -16,7 +16,8 @@ apply plugin: 'io.spring.dependency-management'
 
 group = 'com.opengateway'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = 10
+sourceCompatibility = 11
+targetCompatibility = 11
 
 repositories {
 	mavenCentral()
@@ -25,11 +26,13 @@ repositories {
 
 
 ext {
-	springCloudVersion = 'Greenwich.M2'
+	springCloudVersion = 'Greenwich.M1'
+	atlassianDependenciesVersion = '2.0.3'
 }
 
 dependencies {
 	implementation('org.springframework.cloud:spring-cloud-starter-gateway')
+	implementation("com.atlassian.oai:swagger-request-validator-core:${atlassianDependenciesVersion}")
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
