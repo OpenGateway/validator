@@ -9,9 +9,9 @@ import java.util.function.Function;
 @Component
 class RouteFactory {
 
-    Function<PredicateSpec, Route.AsyncBuilder> getHelloWorld() {
+    Function<PredicateSpec, Route.AsyncBuilder> getSimpleroute() {
         return p -> p
-                .path("/get")
+                .path("/simpleRoute")
                 .filters(f -> f.addRequestHeader("Hello", "World"))
                 .uri("http://httpbin.org:80");
     }

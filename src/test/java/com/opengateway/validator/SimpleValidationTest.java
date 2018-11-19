@@ -5,10 +5,15 @@ package com.opengateway.validator;
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.model.Request;
 import com.atlassian.oai.validator.report.ValidationReport;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -21,13 +26,13 @@ import static org.springframework.test.util.AssertionErrors.assertTrue;
 @RunWith(SpringRunner.class)
 public class SimpleValidationTest {
 
+
     @Test
     public void simpleValidation() {
 
         final OpenApiInteractionValidator validator = OpenApiInteractionValidator
-                .createFor("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore-expanded.yaml")
+                .createFor("/contract.yaml")
                 .build();
-
 
         final ValidationReport report = validator.validateRequest(new Request() {
 

@@ -18,7 +18,7 @@ class Router {
     @Bean
     RouteLocator getRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route(routeFactory.getHelloWorld())
+                .route(routeFactory.getSimpleroute())
                 .route(routeFactory.getStub())
                 .build();
     }

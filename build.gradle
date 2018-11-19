@@ -36,7 +36,7 @@ repositories {
 
 
 ext {
-	springCloudVersion = 'Greenwich.M1'
+	springCloudVersion = 'Greenwich.M2'
 	atlassianDependenciesVersion = '2.0.3'
 }
 
