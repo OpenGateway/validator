@@ -23,11 +23,11 @@ import reactor.core.publisher.Mono;
 import javax.annotation.Nonnull;
 import java.util.stream.Collectors;
 
-public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApiValidatorFilter.OpenApiValidatorConfig> {
-    private static final Logger log = LoggerFactory.getLogger(OpenApiValidatorFilter.class);
+public class OpenApiValidatorFilterFactory extends AbstractGatewayFilterFactory<OpenApiValidatorFilterFactory.Config> {
+    private static final Logger log = LoggerFactory.getLogger(OpenApiValidatorFilterFactory.class);
 
     @Override
-    public GatewayFilter apply(OpenApiValidatorConfig config) {
+    public GatewayFilter apply(Config config) {
         OpenApiInteractionValidator validator = config.getValidator();
 
         return (exchange, chain) -> {
@@ -77,10 +77,14 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
                 }));
     }
 
-    public static class OpenApiValidatorConfig {
-        final OpenApiInteractionValidator validator = OpenApiInteractionValidator
-                .createFor("/simple_route.yaml")
-                .build();
+    public static class Config {
+        private final OpenApiInteractionValidator validator;
+
+        public Config(String contract) {
+            validator = OpenApiInteractionValidator
+                    .createFor(contract)
+                    .build();
+        }
 
         public OpenApiInteractionValidator getValidator() {
             return validator;
