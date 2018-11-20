@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: No components
+  version: 1.0.0
+servers:
+- url: http://httpbin.org/
+paths:
+  /post2:
+    post:
+      summary: Exercise oneOf composition
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleRequest'
+        description: The request body
+        required: true
+      responses:
+        '201':
+          description: OK
+  /get:
+    post:
+      summary: Exercise oneOf composition
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleRequest'
+        description: The request body
+        required: true
+      responses:
+        '201':
+          description: OK
+
+components:
+  schemas:
+    SimpleRequest:
+      type: object
+      required:
+      - simpleStringHay
+      properties:
+        simpleStringHay:
+          type: string
+        simpleIntHope:
+          type: integer

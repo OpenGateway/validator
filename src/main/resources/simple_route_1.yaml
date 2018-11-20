@@ -3,9 +3,9 @@ info:
   title: No components
   version: 1.0.0
 servers:
-- url: http://petstore.swagger.io/api
+- url: http://httpbin.org
 paths:
-  /post:
+  /post1:
     post:
       summary: Exercise oneOf composition
       requestBody:

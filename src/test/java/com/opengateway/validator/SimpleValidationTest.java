@@ -39,7 +39,7 @@ public class SimpleValidationTest {
     public void simpleRouteValidation() {
 
         final OpenApiInteractionValidator validator = OpenApiInteractionValidator
-                .createFor("/simple_route.yaml")
+                .createFor("/simple_route_1.yaml")
                 .build();
 
         final ValidationReport report = validator.validateRequest(
