@@ -26,8 +26,8 @@ class Router {
 
     @Bean
     RouteLocator getRouteLocator(RouteLocatorBuilder builder) {
-        List<String> contracts = Arrays.asList("/simple_route_1.yaml", "/simple_route_2.yaml");
-        List<OpenAPI> apis = contracts.stream().map(this::getOpenApi).collect(Collectors.toList());
+        val contracts = Arrays.asList("/simple_route_1.yaml", "/simple_route_2.yaml");
+        val apis = contracts.stream().map(this::getOpenApi).collect(Collectors.toList());
         val routes = builder.routes();
         for (int i = 0; i < contracts.size(); i++) {
             val contract = contracts.get(i);
