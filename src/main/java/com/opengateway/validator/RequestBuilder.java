@@ -2,6 +2,7 @@ package com.opengateway.validator;
 
 import com.atlassian.oai.validator.model.SimpleRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
 
 import java.util.List;
@@ -9,11 +10,14 @@ import java.util.Map;
 
 
 public class RequestBuilder extends SimpleRequest.Builder {
-    public RequestBuilder(String method, String path) {
-        super(method, path);
+    public RequestBuilder(ServerHttpRequest serverHttpRequest) {
+
+        super(serverHttpRequest.getMethodValue(), serverHttpRequest.getPath().value());
+        this.withHeaders(serverHttpRequest.getHeaders());
+        this.withQueryParams(serverHttpRequest.getQueryParams());
     }
 
-    public RequestBuilder withHeaders(HttpHeaders httpHeaders) {
+    private RequestBuilder withHeaders(HttpHeaders httpHeaders) {
         for (Map.Entry<String, List<String>> entry : httpHeaders.entrySet()) {
             String headerName = entry.getKey();
             this.withHeader(headerName, entry.getValue());
@@ -21,7 +25,7 @@ public class RequestBuilder extends SimpleRequest.Builder {
         return this;
     }
 
-    public RequestBuilder withQueryParams(MultiValueMap<String, String> queryParameters) {
+    private RequestBuilder withQueryParams(MultiValueMap<String, String> queryParameters) {
         for (Map.Entry<String, List<String>> entry : queryParameters.entrySet()) {
             String headerName = entry.getKey();
             this.withQueryParam(headerName, entry.getValue());
