@@ -28,25 +28,13 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
 
     @Override
     public GatewayFilter apply(OpenApiValidatorConfig config) {
-        OpenApiInteractionValidator validator = config.getValidator();
 
-        return (exchange, chain) -> {
-            ServerHttpRequest serverHttpRequest = exchange.getRequest();
-            ValidationReportHolder holder = new ValidationReportHolder();
-            Mono<String> modifiedBody = new DefaultServerRequest(exchange)
-                    .bodyToMono(String.class)
-                    .flatMap(body ->
-                            validate(validator, exchange, serverHttpRequest, body, holder)
-                    );
-            BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, String.class);
-            CachedBodyOutputMessage cachedBody = new CachedBodyOutputMessage(exchange, exchange.getRequest().getHeaders());
 
-            return rewriteRequest(exchange, chain, bodyInserter, cachedBody, holder);
-        };
+        return (exchange, chain) -> parseRequest(exchange, chain, config);
 
     }
 
-    private Mono<? extends String> validate(OpenApiInteractionValidator validator, ServerWebExchange exchange, ServerHttpRequest serverHttpRequest, String body, ValidationReportHolder holder) {
+    private Mono<? extends String> validate(OpenApiInteractionValidator validator, ServerHttpRequest serverHttpRequest, String body, ValidationReportHolder holder) {
         Request request = new RequestBuilder(serverHttpRequest).withBody(body).build();
         ValidationReport report = validator.validateRequest(request);
         holder.add(report);
@@ -54,7 +42,20 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
         return Mono.just(body);
     }
 
-    private Mono rewriteRequest(ServerWebExchange exchange, GatewayFilterChain chain, BodyInserter bodyInserter, CachedBodyOutputMessage cachedBody, ValidationReportHolder holder) {
+    private Mono parseRequest(ServerWebExchange exchange, GatewayFilterChain chain, OpenApiValidatorConfig config) {
+        OpenApiInteractionValidator validator = config.getValidator();
+
+        ServerHttpRequest serverHttpRequest = exchange.getRequest();
+        ValidationReportHolder holder = new ValidationReportHolder();
+        Mono<String> modifiedBody = new DefaultServerRequest(exchange)
+            .bodyToMono(String.class)
+            .flatMap(body ->
+                    validate(validator, serverHttpRequest, body, holder)
+            );
+
+        BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, String.class);
+        CachedBodyOutputMessage cachedBody = new CachedBodyOutputMessage(exchange, exchange.getRequest().getHeaders());
+
         return bodyInserter.insert(cachedBody,  new BodyInserterContext())
                 .then(Mono.defer(() -> {
                     ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(exchange.getRequest()) {
@@ -66,6 +67,8 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
                     };
 
                     if (holder.get().hasErrors()) {
+                        System.out.println(holder.get().getMessages());
+
                         exchange.getResponse().setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
                         return exchange.getResponse().setComplete();
                     }
