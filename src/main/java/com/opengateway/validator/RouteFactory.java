@@ -12,8 +12,7 @@ class RouteFactory {
     Function<PredicateSpec, Route.AsyncBuilder> getSimpleroute() {
         return p -> p
                 .path("/post")
-                .filters(f -> f.filter(new OpenApiValidatorFilter().apply(new OpenApiValidatorFilter.OpenApiValidatorConfig())))
-
+                .filters(f -> f.filter(new OpenApiValidatorFilterFactory().apply(new OpenApiValidatorFilterFactory.Config("/simple_route.yaml"))))
                 .uri("http://httpbin.org:80");
     }
 
