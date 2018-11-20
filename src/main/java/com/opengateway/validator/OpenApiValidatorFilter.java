@@ -21,6 +21,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
+import java.util.stream.Collectors;
 
 public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApiValidatorFilter.OpenApiValidatorConfig> {
     private static final Logger log = LoggerFactory.getLogger(OpenApiValidatorFilter.class);
@@ -46,11 +47,13 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
     private Mono<Void> writeResponse(ServerWebExchange exchange, ValidationReport report) {
         log.info("Report: {}", report);
         log.info("UNPROCESSABLE ENTITY");
-        val messages = "{\"hello\": \"world\"}";
+//        val messages = "{\"hello\": \"world\"}";
+        val messages = report.getMessages().stream().map(s-> s.getMessage().replace("\"","'")).collect(Collectors.joining("\",\""));
+        val errorResponse = "{\"messages\": [\""+messages+"\"]}";
         val response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
         val outputMessage = new CachedBodyOutputMessage(exchange, response.getHeaders());
-        return BodyInserters.fromPublisher(Mono.just(messages), String.class)
+        return BodyInserters.fromPublisher(Mono.just(errorResponse), String.class)
                 .insert(outputMessage, new BodyInserterContext())
                 .then(Mono.defer(() -> response.writeWith(outputMessage.getBody())))
                 .then(Mono.defer(response::setComplete));
