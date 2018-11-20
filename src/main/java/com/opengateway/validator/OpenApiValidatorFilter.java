@@ -36,20 +36,23 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
                     .map(b -> new UnvalidatedRequest(request, b))
                     .flatMap(r -> {
                         final ValidationReport report = validator.validateRequest(r);
-                        if (report.hasErrors()) {
-                            log.info("Report: {}", report);
-                            log.info("UNPROCESSABLE ENTITY");
-                            val response = exchange.getResponse();
-                            response.setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
-                            return response.setComplete();
-                        }
-                        log.info("ALL GOOD");
-                        return rewriteRequest(exchange, chain, Mono.justOrEmpty(r.getBody()));
+                        return report.hasErrors()
+                                ? writeResponse(exchange, report)
+                                : rewriteRequest(exchange, chain, Mono.justOrEmpty(r.getBody()));
                     });
         };
     }
 
+    private Mono<Void> writeResponse(ServerWebExchange exchange, ValidationReport report) {
+        log.info("Report: {}", report);
+        log.info("UNPROCESSABLE ENTITY");
+        val response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
+        return response.setComplete();
+    }
+
     private Mono<Void> rewriteRequest(ServerWebExchange exchange, GatewayFilterChain chain, Mono<String> body) {
+        log.info("ALL GOOD");
         val headers = new HttpHeaders(exchange.getRequest().getHeaders());
         val outputMessage = new CachedBodyOutputMessage(exchange, headers);
         return BodyInserters.fromPublisher(body, String.class)
