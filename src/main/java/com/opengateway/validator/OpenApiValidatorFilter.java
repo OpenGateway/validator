@@ -30,68 +30,47 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
     public GatewayFilter apply(OpenApiValidatorConfig config) {
         OpenApiInteractionValidator validator = config.getValidator();
 
-
         return (exchange, chain) -> {
             ServerHttpRequest serverHttpRequest = exchange.getRequest();
-
-
             ValidationReportHolder holder = new ValidationReportHolder();
-
-
-
             Mono<String> modifiedBody = new DefaultServerRequest(exchange)
                     .bodyToMono(String.class)
                     .flatMap(body ->
                             validate(validator, exchange, serverHttpRequest, body, holder)
                     );
-
             BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, String.class);
+            CachedBodyOutputMessage cachedBody = new CachedBodyOutputMessage(exchange, exchange.getRequest().getHeaders());
 
-            CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, exchange.getRequest().getHeaders());
-
-            return rewriteRequest(exchange, chain, bodyInserter, outputMessage);
-            //return chain.filter(exchange);
+            return rewriteRequest(exchange, chain, bodyInserter, cachedBody, holder);
         };
 
     }
 
     private Mono<? extends String> validate(OpenApiInteractionValidator validator, ServerWebExchange exchange, ServerHttpRequest serverHttpRequest, String body, ValidationReportHolder holder) {
-        log.info("Body: {}", body);
-
         Request request = new RequestBuilder(serverHttpRequest).withBody(body).build();
-
         ValidationReport report = validator.validateRequest(request);
-
         holder.add(report);
-        if (report == null || report.hasErrors()) {
-            System.out.println(report);
-            exchange.getResponse().setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
-        }
 
         return Mono.just(body);
     }
 
-    private Mono rewriteRequest(ServerWebExchange exchange, GatewayFilterChain chain, BodyInserter bodyInserter, CachedBodyOutputMessage outputMessage) {
-        return bodyInserter.insert(outputMessage,  new BodyInserterContext())
+    private Mono rewriteRequest(ServerWebExchange exchange, GatewayFilterChain chain, BodyInserter bodyInserter, CachedBodyOutputMessage cachedBody, ValidationReportHolder holder) {
+        return bodyInserter.insert(cachedBody,  new BodyInserterContext())
                 .then(Mono.defer(() -> {
                     ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(exchange.getRequest()) {
 
                         @Override
                         public Flux<DataBuffer> getBody() {
-                            return outputMessage.getBody();
+                            return cachedBody.getBody();
                         }
                     };
 
-                    /* Complete request if response status code is UNPROCESSABLE_ENTITY */
-                    if(HttpStatus.UNPROCESSABLE_ENTITY.equals(exchange.getResponse().getStatusCode())) {
-                        //TODO: Create Error Response
+                    if (holder.get().hasErrors()) {
+                        exchange.getResponse().setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
                         return exchange.getResponse().setComplete();
                     }
 
-                    //
                     return chain.filter(exchange.mutate().request(decorator).build());
-
-                    //return chain.filter(exchange);
                 }));
     }
 
