@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @Configuration
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-class Router {
+class RouteConfiguration {
     private final RouteFactory routeFactory;
     private final ApplicationProperties applicationProperties;
 
