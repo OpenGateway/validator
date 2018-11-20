@@ -1,0 +1,3 @@
+contracts:
+    - "/simple_route_1.yaml"
+    - "/simple_route_2.yaml"

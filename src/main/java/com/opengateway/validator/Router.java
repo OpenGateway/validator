@@ -4,6 +4,7 @@ import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -11,22 +12,17 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Configuration
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 class Router {
     private final RouteFactory routeFactory;
-
-    @Autowired
-    public Router(RouteFactory routeFactory) {
-        this.routeFactory = routeFactory;
-    }
+    private final ApplicationProperties applicationProperties;
 
     @Bean
     RouteLocator getRouteLocator(RouteLocatorBuilder builder) {
-        val contracts = Arrays.asList("/simple_route_1.yaml", "/simple_route_2.yaml");
+        val contracts = applicationProperties.getContracts();
         val apis = contracts.stream().map(this::getOpenApi).collect(Collectors.toList());
         val routes = builder.routes();
         for (int i = 0; i < contracts.size(); i++) {
