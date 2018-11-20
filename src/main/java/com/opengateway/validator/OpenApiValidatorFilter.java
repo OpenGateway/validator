@@ -46,9 +46,14 @@ public class OpenApiValidatorFilter extends AbstractGatewayFilterFactory<OpenApi
     private Mono<Void> writeResponse(ServerWebExchange exchange, ValidationReport report) {
         log.info("Report: {}", report);
         log.info("UNPROCESSABLE ENTITY");
+        val messages = "{\"hello\": \"world\"}";
         val response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNPROCESSABLE_ENTITY);
-        return response.setComplete();
+        val outputMessage = new CachedBodyOutputMessage(exchange, response.getHeaders());
+        return BodyInserters.fromPublisher(Mono.just(messages), String.class)
+                .insert(outputMessage, new BodyInserterContext())
+                .then(Mono.defer(() -> response.writeWith(outputMessage.getBody())))
+                .then(Mono.defer(response::setComplete));
     }
 
     private Mono<Void> rewriteRequest(ServerWebExchange exchange, GatewayFilterChain chain, Mono<String> body) {
