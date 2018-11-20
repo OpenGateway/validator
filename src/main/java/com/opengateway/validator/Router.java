@@ -1,6 +1,5 @@
 package com.opengateway.validator;
 
-import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.core.models.ParseOptions;
@@ -13,9 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -29,22 +26,20 @@ class Router {
 
     @Bean
     RouteLocator getRouteLocator(RouteLocatorBuilder builder) {
-
         List<String> contracts = Arrays.asList("/simple_route_1.yaml", "/simple_route_2.yaml");
-
         List<OpenAPI> apis = contracts.stream().map(this::getOpenApi).collect(Collectors.toList());
-
         val routes = builder.routes();
-
         for (int i = 0; i < contracts.size(); i++) {
+            val contract = contracts.get(i);
+            val uri = apis.get(i).getServers().get(0).getUrl();
             for (String path : apis.get(i).getPaths().keySet()) {
-                routes.route(routeFactory.getSimpleroute(path, contracts.get(i), apis.get(i).getServers().get(0).getUrl()));
+                routes.route(routeFactory.getSimpleRoute(path, contract, uri));
             }
         }
         return routes.build();
     }
 
-    public OpenAPI getOpenApi(String contractPath) {
+    private OpenAPI getOpenApi(String contractPath) {
         final OpenAPIParser openAPIParser = new OpenAPIParser();
         final ParseOptions parseOptions = new ParseOptions();
         parseOptions.setResolve(true);
