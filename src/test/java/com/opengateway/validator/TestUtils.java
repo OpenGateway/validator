@@ -3,19 +3,21 @@ package com.opengateway.validator;
 import com.atlassian.oai.validator.report.ValidationReport;
 
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import static java.lang.String.join;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 class TestUtils {
     private TestUtils() {
     }
 
-    static void check(ValidationReport report) {
-        String errors = join("\n",
-                report.getMessages().stream().map(Objects::toString).collect(Collectors.toList()));
+    static void assertValid(ValidationReport report) {
+        String errors = report.getMessages().stream().map(Objects::toString).collect(joining("\n"));
         assertFalse("Found unexpected errors.\n" + errors, report.hasErrors());
+    }
 
+    static void assertInvalid(ValidationReport report) {
+        assertTrue("Errors were expected, but did not find any.", report.hasErrors());
     }
 }

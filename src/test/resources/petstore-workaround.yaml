@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: Swagger Petstorey
+  title: Swagger Petstore
   description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
   termsOfService: http://swagger.io/terms/
   contact:
@@ -47,7 +47,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PolymorphicPet'
+                  $ref: '#/components/schemas/AnyPet'
         default:
           description: unexpected error
           content:
@@ -63,14 +63,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PolymorphicPet'
+              $ref: '#/components/schemas/AnyPet'
       responses:
         '200':
           description: pet response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PolymorphicPet'
+                $ref: '#/components/schemas/AnyPet'
         default:
           description: unexpected error
           content:
@@ -95,7 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PolymorphicPet'
+                $ref: '#/components/schemas/AnyPet'
         default:
           description: unexpected error
           content:
@@ -133,14 +133,17 @@ components:
         name:
           type: string
       required:
-      - namereduced
+      - name
 
-    Cat:  ## "Cat" will be used as the discriminator value
+    Cat:
       description: A representation of a cat
       allOf:
       - $ref: '#/components/schemas/Pet'
       - type: object
         properties:
+          petType:
+            type: string
+            enum: ['Cat']
           huntingSkill:
             type: string
             description: The measured skill for hunting
@@ -152,12 +155,15 @@ components:
         required:
         - huntingSkill
 
-    Dog:  ## "Dog" will be used as the discriminator value
+    Dog:
       description: A representation of a dog
       allOf:
       - $ref: '#/components/schemas/Pet'
       - type: object
         properties:
+          petType:
+            type: string
+            enum: ['Dog']
           packSize:
             type: integer
             format: int32
@@ -167,7 +173,7 @@ components:
         required:
         - packSize
 
-    PolymorphicPet:
+    AnyPet:
       type: object
       oneOf:
       - $ref: '#/components/schemas/Cat'

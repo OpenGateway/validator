@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static com.opengateway.validator.TestUtils.check;
+import static com.opengateway.validator.TestUtils.assertValid;
 import static java.lang.String.join;
 import static org.junit.Assert.assertFalse;
 
@@ -32,7 +32,7 @@ public class SimpleValidationTest {
                         .withContentType("application/json")
                         .build());
 
-        check(report);
+        assertValid(report);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class SimpleValidationTest {
                         .withContentType("application/json")
                         .build());
 
-        check(report);
+        assertValid(report);
     }
 }
 

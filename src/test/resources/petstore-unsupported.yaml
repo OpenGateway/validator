@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: Swagger Petstorey
+  title: Swagger Petstore
   description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
   termsOfService: http://swagger.io/terms/
   contact:
@@ -47,7 +47,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Pet'
+                  $ref: '#/components/schemas/AnyPet'
         default:
           description: unexpected error
           content:
@@ -63,14 +63,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/AnyPet'
       responses:
         '200':
           description: pet response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
+                $ref: '#/components/schemas/AnyPet'
         default:
           description: unexpected error
           content:
@@ -95,7 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
+                $ref: '#/components/schemas/AnyPet'
         default:
           description: unexpected error
           content:
@@ -126,8 +126,6 @@ components:
   schemas:
     Pet:
       type: object
-      discriminator:
-        propertyName: petType
       properties:
         id:
           type: integer
@@ -136,6 +134,8 @@ components:
           type: string
         petType:
           type: string
+      discriminator:
+        propertyName: petType
       required:
       - name
       - petType
@@ -155,7 +155,7 @@ components:
             - adventurous
             - aggressive
         required:
-        - huntingSkill
+          - huntingSkill
 
     Dog:  ## "Dog" will be used as the discriminator value
       description: A representation of a dog
@@ -170,7 +170,13 @@ components:
             default: 0
             minimum: 0
         required:
-        - packSize
+          - packSize
+
+    AnyPet:
+      type: object
+      anyOf:
+      - $ref: '#/components/schemas/Cat'
+      - $ref: '#/components/schemas/Dog'
 
     Error:
       required:
